@@ -24,6 +24,7 @@ References:
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
+var rest = require('restler');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
 
@@ -55,6 +56,15 @@ var checkHtmlFile = function(htmlfile, checksfile) {
     return out;
 };
 
+var checkUrlFile = function(urlfile, checksFile) {
+    rest.get(urlfile).on('complete',function(response) { 
+	console.log("in checkurl");
+	//console.log("response is :", response);
+	var out = checkHtmlFile(response,checksFile);
+	return out;
+    });
+};
+
 var clone = function(fn) {
     // Workaround for commander.js issue.
     // http://stackoverflow.com/a/6772648
@@ -65,9 +75,18 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
-    var outJson = JSON.stringify(checkJson, null, 4);
+	.option('-u, --url  <rml_file>', 'web address')
+        
+.parse(process.argv);
+    console.log("url is " + program.url);
+    if (program.url) {
+	checkUrlFile(program.url, program.checks);
+    }
+    else {
+	var checkJson = checkHtmlFile(program.file, program.checks);
+
+	var outJson = JSON.stringify(checkJson, null, 4);
+	}
     console.log(outJson);
 } else {
     exports.checkHtmlFile = checkHtmlFile;
